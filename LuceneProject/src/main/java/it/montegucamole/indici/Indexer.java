@@ -17,9 +17,9 @@ import java.nio.file.Path;
 public class Indexer implements AutoCloseable {
     private final IndexWriter writer;
 
-    public Indexer(Path dir) throws Exception {
+    public Indexer(Path dir,String AnalizerConf) throws Exception {
         Directory directory = FSDirectory.open(dir);
-        Analyzer configuredAnalyzer = AppAnalyzerFactory.createPerFieldAnalyzer("src/main/resources/analyzer_config.json");
+        Analyzer configuredAnalyzer = AppAnalyzerFactory.createPerFieldAnalyzer(AnalizerConf);
         IndexWriterConfig config = new IndexWriterConfig(configuredAnalyzer);
         this.writer = new IndexWriter(directory, config);
     }

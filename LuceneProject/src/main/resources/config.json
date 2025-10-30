@@ -1,0 +1,5 @@
+{
+  "index_dir": "./dir_index",
+  "data_dir": "../dataset_titolato",
+  "analyzer_config": "src/main/resources/analyzer_config.json"
+}

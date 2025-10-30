@@ -1,4 +1,4 @@
-package it.montegucamole.dbUtils;
+package it.montegucamole.Utils;
 
 import java.io.IOException;
 import java.nio.file.Files;

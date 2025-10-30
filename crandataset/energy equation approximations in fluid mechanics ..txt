@@ -1,0 +1,7 @@
+ID: 507
+Autore: goldstein,a.w.
+Bibliografia: j. ae. scs. 29, 1962,358
+
+energy equation approximations in fluid mechanics .
+  discussion of several forms of the energy equation and of their
+use for the study of the flow of nearly incompressible fluids .
