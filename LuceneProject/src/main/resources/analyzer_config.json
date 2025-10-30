@@ -1,0 +1,13 @@
+{
+  "default_analyzer": "StandardAnalyzer",
+  "field_analyzers": [
+    {
+      "field_name": "titolo",
+      "analyzer_class": "org.apache.lucene.analysis.core.KeywordAnalyzer"
+    },
+    {
+      "field_name": "content",
+      "analyzer_class": "org.apache.lucene.analysis.standard.StandardAnalyzer"
+    }
+  ]
+}
