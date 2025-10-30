@@ -1,5 +1,5 @@
 {
   "index_dir": "./dir_index",
-  "data_dir": "../dataset_titolato",
+  "data_dir": "../crandataset",
   "analyzer_config": "src/main/resources/analyzer_config.json"
 }

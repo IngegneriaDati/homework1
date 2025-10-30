@@ -1,10 +1,9 @@
 package it.montegucamole.indici;
 
 import it.montegucamole.Analyzers.AppAnalyzerFactory;
+import it.montegucamole.Utils.ParsedDocument;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.*;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.store.Directory;
@@ -25,11 +24,11 @@ public class Indexer implements AutoCloseable {
     }
 
     public void addDocument(Path file) throws IOException {
-        String nome = file.toFile().getName();
-        String content = Files.readString(file);
+        ParsedDocument filepar = new ParsedDocument(file);
         Document doc = new Document();
-        doc.add(new TextField("titolo", nome, Field.Store.YES));
-        doc.add(new TextField("content", content, Field.Store.YES));
+        doc.add(new StringField("doc_id", filepar.id, Field.Store.YES));
+        doc.add(new TextField("titolo", filepar.titolo, Field.Store.YES));
+        doc.add(new TextField("content", filepar.corpo, Field.Store.YES));
         writer.addDocument(doc);
     }
 
