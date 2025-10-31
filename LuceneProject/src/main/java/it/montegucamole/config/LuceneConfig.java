@@ -1,45 +1,42 @@
-package it.montegucamole;
+package it.montegucamole.config;
 
 import it.montegucamole.Utils.AppConfig;
 import it.montegucamole.Utils.FileScanner;
 import it.montegucamole.indici.Indexer;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
-@SpringBootApplication
-public class Main {
+@Configuration
+public class LuceneConfig {
 
     private static final String CONFIG_PATH = "src/main/resources/config.json";
 
-    public static void main(String[] args) throws Exception {
-
+    @Bean
+    public Indexer indexer() throws Exception {
         // 1. Carica configurazione JSON
         AppConfig.load(CONFIG_PATH);
-        AppConfig.Config cfg = AppConfig.get();
+        var cfg = AppConfig.get();
 
-        Path dataPath = Paths.get(cfg.data_dir);
+        Path dataPath = Path.of(cfg.data_dir);
 
         // 2. Trova tutti i file .txt
         List<Path> filesToProcess = FileScanner.findTxtFiles(dataPath);
 
         if (filesToProcess.isEmpty()) {
             System.out.println("Nessun file .txt trovato nella directory: " + dataPath);
-            return;
+        } else {
+            System.out.println("Trovati " + filesToProcess.size() + " file da indicizzare.");
         }
-
-        System.out.println("Trovati " + filesToProcess.size() + " file da indicizzare.");
 
         long startTime = System.currentTimeMillis();
 
-        // 3. Indicizzazione con AutoCloseable
-        try (Indexer indexer = new Indexer(Paths.get(cfg.index_dir),cfg.analyzer_config)) {
-            for (Path file : filesToProcess) {
-                indexer.addDocument(file);
-            }
+        // 3. Indicizzazione
+        Indexer indexer = new Indexer(Path.of(cfg.index_dir), cfg.analyzer_config);
+        for (Path file : filesToProcess) {
+            indexer.addDocument(file);
         }
 
         long endTime = System.currentTimeMillis();
@@ -47,6 +44,7 @@ public class Main {
         System.out.println("Indicizzazione completata.");
         System.out.println("Numero di file indicizzati: " + filesToProcess.size());
         System.out.println("Tempo di indicizzazione totale: " + (endTime - startTime) + " ms");
-        SpringApplication.run(Main.class, args);
+
+        return indexer; // il bean viene mantenuto per tutto il servizio
     }
 }
