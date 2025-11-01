@@ -1,14 +1,12 @@
 package it.montegucamole.searcher;
 
 import it.montegucamole.Utils.AppConfig;
-import it.montegucamole.searcher.Searcher;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import jakarta.annotation.PreDestroy;
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -16,49 +14,74 @@ import java.nio.file.Path;
 @RequestMapping("/search")
 public class SearchController {
 
-    private final Searcher searcher;
+    private Searcher searcher;
 
-    public SearchController() throws Exception {
-        // Carica configurazione JSON
-        AppConfig.load("src/main/resources/config.json");
-        var cfg = AppConfig.get();
-
-        // Inizializza lo Searcher una sola volta
-        this.searcher = new Searcher(Path.of(cfg.index_dir), cfg.analyzer_config);
+    // Inizializzazione lazy - crea il Searcher solo al primo uso
+    private Searcher getSearcher() throws Exception {
+        if (searcher == null) {
+            synchronized (this) {
+                if (searcher == null) {
+                    AppConfig.Config cfg = AppConfig.get();
+                    searcher = new Searcher(Path.of(cfg.index_dir), cfg.analyzer_config);
+                    System.out.println("🔍 Searcher inizializzato con " + searcher.numDocs() + " documenti");
+                }
+            }
+        }
+        return searcher;
     }
 
     @GetMapping("/query")
-    public String search(@RequestParam String q, @RequestParam(defaultValue = "100") int top) throws IOException {
-        TopDocs results = searcher.search(q, top);
+    public String search(@RequestParam String q, @RequestParam(defaultValue = "100") int top) throws Exception {
+        Searcher s = getSearcher();
+        TopDocs results = s.search(q, top);
 
         StringBuilder sb = new StringBuilder();
+        sb.append(String.format("Trovati %d risultati per: %s\n\n", results.totalHits.value, q));
+
         for (int i = 0; i < results.scoreDocs.length; i++) {
             ScoreDoc sd = results.scoreDocs[i];
-            Document doc = searcher.doc(sd.doc);
-            sb.append(String.format("%d: %s (score=%.4f)\n", i+1, doc.get("doc_id"), sd.score));
+            Document doc = s.doc(sd.doc);
+            sb.append(String.format("%d. DOC_ID: %s\n", i + 1, doc.get("doc_id")));
+            sb.append(String.format("   Titolo: %s\n", doc.get("titolo")));
+            sb.append(String.format("   Score: %.4f\n\n", sd.score));
         }
+
         return sb.toString();
     }
 
     @PostMapping("/trec")
     public String generateTrecRun(@RequestParam String queryId,
                                   @RequestParam String runName,
-                                  @RequestParam String queryText) throws IOException {
+                                  @RequestParam String queryText) throws Exception {
 
-        TopDocs results = searcher.search(queryText, 100);
+        Searcher s = getSearcher();
+        TopDocs results = s.search(queryText, 1000);
         StringBuilder sb = new StringBuilder();
         ScoreDoc[] hits = results.scoreDocs;
 
         for (int rank = 0; rank < hits.length; rank++) {
             ScoreDoc sd = hits[rank];
-            Document doc = searcher.doc(sd.doc);
+            Document doc = s.doc(sd.doc);
             String docId = doc.get("doc_id");
 
-            sb.append(String.format("%s Q0 %s %d %.4f %s",
+            sb.append(String.format("%s Q0 %s %d %.6f %s\n",
                     queryId, docId, rank + 1, sd.score, runName));
-            sb.append("\n");
         }
 
         return sb.toString();
+    }
+
+    @GetMapping("/stats")
+    public String getStats() throws Exception {
+        Searcher s = getSearcher();
+        return String.format("Documenti indicizzati: %d", s.numDocs());
+    }
+
+    @PreDestroy
+    public void cleanup() throws IOException {
+        if (searcher != null) {
+            System.out.println("🛑 Chiusura Searcher...");
+            searcher.close();
+        }
     }
 }

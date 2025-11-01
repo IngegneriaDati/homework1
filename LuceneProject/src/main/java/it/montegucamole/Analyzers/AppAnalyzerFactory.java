@@ -20,11 +20,10 @@ public class AppAnalyzerFactory {
 
     private static class FieldAnalyzerMapping {
         String field_name;
-        String analyzer_class;
-        List<String> args; // 👈 supporto argomenti
+        String analyzer_class;  // ✅ DEVE essere String, non List<String>
+        List<String> args;
     }
 
-    // 🔹 Nuovo tipo di ritorno
     public static class Result {
         private final Analyzer analyzer;
         private final List<String> fieldNames;
@@ -38,7 +37,6 @@ public class AppAnalyzerFactory {
         public List<String> fieldNames() { return fieldNames; }
     }
 
-    // 🔹 Metodo principale modificato
     public static Result createPerFieldAnalyzer(String configFilePath) throws Exception {
         Gson gson = new Gson();
         AnalyzerConfig config;
@@ -80,7 +78,6 @@ public class AppAnalyzerFactory {
         return new Result(perFieldWrapper, fieldNames);
     }
 
-    // 🔹 Metodo per istanziare dinamicamente un analyzer con argomenti
     private static Analyzer instantiateAnalyzer(String className, List<String> args) throws Exception {
         String fullClassName = className.contains(".")
                 ? className
@@ -91,7 +88,7 @@ public class AppAnalyzerFactory {
         if (args.isEmpty()) {
             return (Analyzer) clazz.getDeclaredConstructor().newInstance();
         } else {
-            // per ora assumiamo che gli argomenti siano String, ma puoi adattare
+            // Supporto per argomenti String
             return (Analyzer) clazz.getDeclaredConstructor(String.class).newInstance(args.get(0));
         }
     }

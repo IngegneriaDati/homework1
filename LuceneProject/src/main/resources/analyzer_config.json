@@ -1,15 +1,24 @@
 {
   "default_analyzer": "StandardAnalyzer",
-  "args": [],
   "field_analyzers": [
     {
       "field_name": "titolo",
-      "analyzer_class": "org.apache.lucene.analysis.core.KeywordAnalyzer",
+      "analyzer_class": "org.apache.lucene.analysis.standard.StandardAnalyzer",
       "args": []
     },
     {
       "field_name": "content",
-      "analyzer_class": "org.apache.lucene.analysis.standard.StandardAnalyzer",
+      "analyzer_class": "org.apache.lucene.analysis.en.EnglishAnalyzer",
+      "args": []
+    },
+    {
+      "field_name": "autore",
+      "analyzer_class": "org.apache.lucene.analysis.core.KeywordAnalyzer",
+      "args": []
+    },
+    {
+      "field_name": "bibliografia",
+      "analyzer_class": "org.apache.lucene.analysis.en.EnglishAnalyzer",
       "args": []
     }
   ]

@@ -15,8 +15,6 @@ public class ParsedDocument {
     public String corpo;
 
     public ParsedDocument(Path file) throws IOException {
-        //ParsedDocument doc = new ParsedDocument();
-
         // Leggi il contenuto del file
         String content = Files.readString(file);
 
@@ -30,21 +28,53 @@ public class ParsedDocument {
 
         // Estrai il corpo (tutto dopo "Bibliografia:")
         corpo = extractBody(content);
+
+        // Debug: stampa quando l'ID è vuoto
+        if (id == null || id.isEmpty()) {
+            System.err.println("⚠️ ID non trovato per file: " + file.getFileName());
+            System.err.println("Prime 200 caratteri del file:");
+            System.err.println(content.substring(0, Math.min(200, content.length())));
+            System.err.println("---");
+        }
     }
 
     private String extractField(String content, String fieldName) {
-        Pattern pattern = Pattern.compile(fieldName + "\\s*(.+?)\\n", Pattern.CASE_INSENSITIVE);
+        // Pattern migliorato:
+        // - \s* = zero o più spazi/tab dopo il campo
+        // - (.+?) = cattura il valore (non-greedy)
+        // - (?:\r?\n|$) = termina con newline (Windows o Unix) o fine stringa
+        Pattern pattern = Pattern.compile(
+                fieldName + "\\s*(.+?)(?:\\r?\\n|$)",
+                Pattern.CASE_INSENSITIVE
+        );
         Matcher matcher = pattern.matcher(content);
-        return matcher.find() ? matcher.group(1).trim() : "";
+
+        if (matcher.find()) {
+            String value = matcher.group(1).trim();
+            return value.isEmpty() ? null : value;
+        }
+        return null;
     }
 
     private String extractBody(String content) {
-        int bibliografiaIndex = content.indexOf("Bibliografia:");
-        if (bibliografiaIndex == -1) {
+        // Cerca "Bibliografia:" in modo case-insensitive
+        Pattern bibPattern = Pattern.compile("Bibliografia:", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = bibPattern.matcher(content);
+
+        if (!matcher.find()) {
             return content.trim();
         }
 
+        int bibliografiaIndex = matcher.start();
         int bodyStart = content.indexOf('\n', bibliografiaIndex);
-        return bodyStart != -1 ? content.substring(bodyStart + 1).trim() : "";
+
+        // Gestisce anche \r\n (Windows)
+        if (bodyStart != -1) {
+            String body = content.substring(bodyStart + 1).trim();
+            // Rimuove eventuali \r residui
+            return body.replace("\r", "");
+        }
+
+        return "";
     }
 }

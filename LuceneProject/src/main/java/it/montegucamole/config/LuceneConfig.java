@@ -1,50 +1,52 @@
 package it.montegucamole.config;
 
 import it.montegucamole.Utils.AppConfig;
-import it.montegucamole.Utils.FileScanner;
-import it.montegucamole.indici.Indexer;
+import it.montegucamole.searcher.Searcher;
+import jakarta.annotation.PreDestroy;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
+import java.nio.file.Paths;
 
 @Configuration
 public class LuceneConfig {
 
     private static final String CONFIG_PATH = "src/main/resources/config.json";
+    private Searcher searcher;
 
     @Bean
-    public Indexer indexer() throws Exception {
-        // 1. Carica configurazione JSON
-        AppConfig.load(CONFIG_PATH);
-        var cfg = AppConfig.get();
-
-        Path dataPath = Path.of(cfg.data_dir);
-
-        // 2. Trova tutti i file .txt
-        List<Path> filesToProcess = FileScanner.findTxtFiles(dataPath);
-
-        if (filesToProcess.isEmpty()) {
-            System.out.println("Nessun file .txt trovato nella directory: " + dataPath);
-        } else {
-            System.out.println("Trovati " + filesToProcess.size() + " file da indicizzare.");
+    @Lazy // Importante: crea il bean solo quando richiesto
+    public Searcher searcher() throws Exception {
+        // Carica configurazione se non già caricata
+        try {
+            AppConfig.get();
+        } catch (IllegalStateException e) {
+            AppConfig.load(CONFIG_PATH);
         }
 
-        long startTime = System.currentTimeMillis();
+        AppConfig.Config cfg = AppConfig.get();
+        Path indexPath = Paths.get(cfg.index_dir);
 
-        // 3. Indicizzazione
-        Indexer indexer = new Indexer(Path.of(cfg.index_dir), cfg.analyzer_config);
-        for (Path file : filesToProcess) {
-            indexer.addDocument(file);
+        // Verifica che l'indice esista
+        if (!Files.exists(indexPath) || !Files.list(indexPath).findAny().isPresent()) {
+            throw new IllegalStateException(
+                    "Indice non trovato. L'indicizzazione dovrebbe essere completata prima.");
         }
 
-        long endTime = System.currentTimeMillis();
+        this.searcher = new Searcher(indexPath, cfg.analyzer_config);
+        System.out.println("🔍 Searcher bean creato con " + searcher.numDocs() + " documenti");
+        return searcher;
+    }
 
-        System.out.println("Indicizzazione completata.");
-        System.out.println("Numero di file indicizzati: " + filesToProcess.size());
-        System.out.println("Tempo di indicizzazione totale: " + (endTime - startTime) + " ms");
-
-        return indexer; // il bean viene mantenuto per tutto il servizio
+    @PreDestroy
+    public void cleanup() throws IOException {
+        if (searcher != null) {
+            System.out.println("🛑 Chiusura Searcher...");
+            searcher.close();
+        }
     }
 }
