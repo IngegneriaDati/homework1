@@ -47,7 +47,7 @@ class ElasticSearcher:
         query_body_str = query_body_str.replace("{{query_text}}", query_text)
 
         if fields is not None:
-            query_body_str = query_body_str.replace("__FIELDS__", json.dumps(fields))
+            query_body_str = query_body_str.replace("\"__FIELDS__\"", json.dumps(fields))
 
         if target_field is not None:
             query_body_str = query_body_str.replace("{{target_field}}", target_field)
@@ -131,7 +131,7 @@ class ElasticSearcher:
                     continue
 
                 # Usa search_query_text per interpretare eventuali prefissi/virgolette
-                results = self.search_query_text(query_text=query_text, size=size)
+                results = self.search_query_text(user_input=query_text, size=size)
 
                 for rank, hit in enumerate(results, start=1):
                     doc_id = hit["_id"]
