@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elastic Search App</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Ricerca Documenti</h1>
+        <form id="search-form">
+            <input type="text" id="query-input" placeholder='Scrivi qui la query, es: "titolo: aeroelastic"' required>
+            <input type="number" id="size-input" placeholder="Numero risultati" value="10" min="1">
+            <button type="submit">Cerca</button>
+        </form>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById("search-form");
+        const resultsDiv = document.getElementById("results");
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const q = document.getElementById("query-input").value;
+            const size = document.getElementById("size-input").value;
+
+            resultsDiv.innerHTML = "<p>Caricamento...</p>";
+
+            try {
+                const res = await fetch(`/search?q=${encodeURIComponent(q)}&size=${size}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<p class="error">${data.error}</p>`;
+                    return;
+                }
+
+                if (data.results.length === 0) {
+                    resultsDiv.innerHTML = "<p>Nessun risultato trovato.</p>";
+                    return;
+                }
+
+                let html = "<ul>";
+                data.results.forEach(hit => {
+                    html += `<li>
+                        <strong>ID:</strong> ${hit.id} |
+                        <strong>Score:</strong> ${hit.score.toFixed(2)}<br>
+                        <strong>Title:</strong> ${hit.source.title}<br>
+                        <strong>Corpo:</strong> ${hit.source.corpo.substring(0, 200)}...
+                    </li>`;
+                });
+                html += "</ul>";
+                resultsDiv.innerHTML = html;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p class="error">Errore: ${err}</p>`;
+            }
+        });
+    </script>
+</body>
+</html>

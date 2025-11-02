@@ -1,0 +1,29 @@
+{
+  "multi_match_template": {
+    "query": {
+      "multi_match": {
+        "query": "{{query_text}}",
+        "fields": "__FIELDS__"
+      }
+    }
+  },
+  "phrase_template": {
+    "query": {
+      "match_phrase": {
+        "{{target_field}}": "{{query_text}}"
+      }
+    }
+  },
+  "phrase_multi_template": {
+    "query": {
+      "bool": {
+        "should": [
+          {"match_phrase": {"title": "{{query_text}}"}},
+          {"match_phrase": {"title.english": "{{query_text}}"}},
+          {"match_phrase": {"title.keyword": "{{query_text}}"}},
+          {"match_phrase": {"corpo": "{{query_text}}"}}
+        ]
+      }
+    }
+  }
+}

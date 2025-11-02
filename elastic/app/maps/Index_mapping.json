@@ -1,0 +1,22 @@
+{
+    "mappings": {
+        "properties": {
+            "id": {"type": "keyword"},
+            "autore": {"type": "text", "analyzer": "standard"},
+            "bibliografia": {"type": "text", "analyzer": "standard"},
+            "title": {
+                "type": "text",
+                "analyzer": "standard",
+                "fields": {
+                    "english": {"type": "text", "analyzer": "english"},
+                    "keyword": {"type": "keyword"}
+                }
+            },
+            "corpo": {
+                "type": "text",
+                "analyzer": "standard",
+                "search_analyzer": "english"
+            }
+        }
+    }
+}
